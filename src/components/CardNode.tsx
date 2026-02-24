@@ -1,9 +1,9 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import type { CardNode } from '../stores/canvasStore';
+import type { CardNode as CardNodeModel } from '../stores/canvasStore';
 
-const CardNode = memo(({ data, selected }: NodeProps<CardNode>) => {
+export function CardNodeView({ data, selected }: NodeProps<CardNodeModel>) {
   return (
     <div
       className={`
@@ -50,8 +50,9 @@ const CardNode = memo(({ data, selected }: NodeProps<CardNode>) => {
       />
     </div>
   );
-});
+}
 
-CardNode.displayName = 'CardNode';
+const CardNodeComponent = memo(CardNodeView);
+CardNodeComponent.displayName = 'CardNodeView';
 
-export default CardNode;
+export default CardNodeComponent;
