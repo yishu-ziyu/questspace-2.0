@@ -12,6 +12,7 @@ import type {
   OnEdgesChange,
   OnConnect,
 } from '@xyflow/react';
+import { createCardId } from '../utils/cardId';
 
 export interface CardData extends Record<string, unknown> {
   title: string;
@@ -52,7 +53,7 @@ export const useCanvasStore = create<CanvasState>()(
       },
 
       addCard: (title, content, position = { x: 100, y: 100 }) => {
-        const id = `card-${Date.now()}`;
+        const id = createCardId();
         const newNode: CardNode = {
           id,
           type: 'card',
