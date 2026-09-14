@@ -1,12 +1,16 @@
-import { Sidebar } from './components/Sidebar';
+import { ReactFlowProvider } from '@xyflow/react';
+
 import { Canvas } from './components/Canvas';
+import { Composer } from './components/Composer';
 
 function App() {
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <Canvas />
-    </div>
+    <ReactFlowProvider>
+      <div className="app-shell">
+        <Canvas />
+        <Composer />
+      </div>
+    </ReactFlowProvider>
   );
 }
 

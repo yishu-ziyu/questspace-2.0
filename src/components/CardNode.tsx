@@ -1,53 +1,83 @@
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
+
 import type { CardNode as CardNodeModel } from '../stores/canvasStore';
+import { useCanvasStore } from '../stores/canvasStore';
+import { runSplit } from '../utils/runSplit';
 
-export function CardNodeView({ data, selected }: NodeProps<CardNodeModel>) {
+export function CardNodeView({ id, data, selected }: NodeProps<CardNodeModel>) {
+  const updateCard = useCanvasStore((s) => s.updateCard);
+  const deleteCard = useCanvasStore((s) => s.deleteCard);
+  const splittingId = useCanvasStore((s) => s.splittingId);
+  const setSplittingId = useCanvasStore((s) => s.setSplittingId);
+  const [draftTitle, setDraftTitle] = useState(data.title);
+  const [draftContent, setDraftContent] = useState(data.content);
+  const busy = splittingId === id;
+
+  useEffect(() => {
+    setDraftTitle(data.title);
+    setDraftContent(data.content);
+  }, [data.title, data.content]);
+
+  const split = async () => {
+    if (busy || splittingId) return;
+    setSplittingId(id);
+    try {
+      await runSplit({
+        title: draftTitle.trim() || data.title,
+        content: draftContent || data.content,
+        parentId: id,
+      });
+    } finally {
+      setSplittingId(null);
+    }
+  };
+
   return (
-    <div
-      className={`
-        min-w-[280px] max-w-[360px] rounded-xl
-        bg-[var(--bg-card)] border transition-all duration-200
-        ${selected ? 'border-[var(--accent)] shadow-lg shadow-[var(--accent)]/20' : 'border-[var(--border)]'}
-        hover:border-[var(--accent-glow)]
-      `}
-    >
-      {/* 连接点 */}
-      <Handle
-        type="target"
-        position={Position.Top}
-        className="!w-3 !h-3 !bg-[var(--accent)] !border-2 !border-[var(--bg-primary)]"
-      />
+    <div className="card-node" data-selected={selected ? 'true' : 'false'} data-busy={busy}>
+      <Handle type="target" id="t" position={Position.Top} />
+      <Handle type="target" id="l" position={Position.Left} />
 
-      {/* 卡片头部 */}
-      <div className="px-4 py-3 border-b border-[var(--border)]">
-        <h3 className="font-semibold text-[var(--text-primary)] text-sm leading-tight">
-          {data.title || '无标题'}
-        </h3>
+      <div className="card-actions">
+        <button
+          type="button"
+          className="card-split pressable nodrag"
+          disabled={busy || Boolean(splittingId)}
+          onClick={() => void split()}
+        >
+          {busy ? '拆开中' : '拆开'}
+        </button>
+        <button type="button" className="card-delete pressable nodrag" onClick={() => deleteCard(id)}>
+          删除
+        </button>
       </div>
 
-      {/* 卡片内容 */}
-      <div className="px-4 py-3">
-        <p className="text-[var(--text-secondary)] text-sm leading-relaxed line-clamp-4">
-          {data.content || '点击编辑内容...'}
-        </p>
-      </div>
-
-      {/* 来源标签 */}
-      {data.source && (
-        <div className="px-4 pb-3">
-          <span className="inline-flex items-center px-2 py-1 rounded-md bg-[var(--accent)]/10 text-[var(--accent)] text-xs">
-            📎 {data.source}
-          </span>
-        </div>
-      )}
-
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="!w-3 !h-3 !bg-[var(--accent)] !border-2 !border-[var(--bg-primary)]"
+      <input
+        className="card-title nodrag nopan nowheel"
+        value={draftTitle}
+        placeholder="未命名"
+        onChange={(e) => setDraftTitle(e.target.value)}
+        onBlur={() => updateCard(id, { title: draftTitle.trim() || '未命名' })}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur();
+          e.stopPropagation();
+        }}
       />
+
+      <textarea
+        className="card-body nodrag nopan nowheel"
+        data-empty={draftContent.trim() ? 'false' : 'true'}
+        value={draftContent}
+        placeholder="点这里写"
+        rows={3}
+        onChange={(e) => setDraftContent(e.target.value)}
+        onBlur={() => updateCard(id, { content: draftContent })}
+        onKeyDown={(e) => e.stopPropagation()}
+      />
+
+      <Handle type="source" id="b" position={Position.Bottom} />
+      <Handle type="source" id="r" position={Position.Right} />
     </div>
   );
 }
